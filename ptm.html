@@ -15,7 +15,6 @@
   .to { font-size: 13px; color: #ffffff60; }
   .btn { display: block; width: 100%; padding: 14px; margin: 8px 0; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; }
   .btn-primary { background: #00b9f5; color: white; }
-  .btn-secondary { background: #ffffff15; color: #fff; border: 1px solid #ffffff30; }
   .hidden { display: none; }
 </style>
 <script>
@@ -26,29 +25,13 @@
 
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-  // UPI pay with merchant flags (from decompiled Paytm APK — QuickPaymentActivity uses am= not amount=)
-  var txnRef = 'TXN' + Date.now() + Math.floor(Math.random() * 1000);
-  var upiParams = 'pa=' + encodeURIComponent(vpa) +
-    '&pn=' + encodeURIComponent(name) +
-    '&am=' + parseFloat(am).toFixed(2) +
-    '&cu=INR' +
-    '&mode=02' +
-    '&mc=0000' +
-    '&tr=' + txnRef +
-    '&tn=Payment';
-
-  var paytmPay = 'paytmmp://pay?' + upiParams;
-  var paytmMoneyTransfer = 'paytmmp://cash_wallet?featuretype=money_transfer&pa=' + encodeURIComponent(vpa) + '&pn=' + encodeURIComponent(name) + '&am=' + am;
-  var upiGeneric = 'upi://pay?' + upiParams;
-  var intentPay = 'intent://pay?' + upiParams + '#Intent;scheme=paytmmp;package=net.one97.paytm;end';
-
-  var links;
-  if (isIOS) {
-    links = [paytmPay, upiGeneric];
-  } else {
-    // Android cascade: Paytm UPI intent → money_transfer send screen → generic UPI
-    links = [intentPay, paytmMoneyTransfer, upiGeneric];
-  }
+  // Paytm chat-with-VPA deeplink (from DiscoverySearchProvider.java)
+  // Opens Paytm chat screen with VPA + amount pre-filled
+  var chatLink = 'paytmmp://chat?featuretype=start_chat&userType=VPA' +
+    '&vpa=' + encodeURIComponent(vpa) +
+    '&txnCategory=VPA2VPA' +
+    '&amount=' + am +
+    '&source=deeplink';
 
   function openLink(url) {
     if (isIOS) {
@@ -63,12 +46,8 @@
     }
   }
 
-  var tried = 0;
-  function tryOpen(index) {
-    var i = (index !== undefined) ? index : tried++;
-    if (i < links.length) {
-      openLink(links[i]);
-    }
+  function tryOpen() {
+    openLink(chatLink);
   }
 
   window.onload = function() {
@@ -81,13 +60,11 @@
       document.getElementById('buttons').classList.remove('hidden');
     } else {
       tryOpen();
-      setTimeout(tryOpen, 2000);
-      setTimeout(tryOpen, 4000);
       setTimeout(function() {
         document.getElementById('spinner').style.display = 'none';
-        document.getElementById('status').textContent = 'Paytm did not open automatically';
+        document.getElementById('status').textContent = 'Paytm did not open?';
         document.getElementById('buttons').classList.remove('hidden');
-      }, 5000);
+      }, 3000);
     }
   };
 </script>
@@ -100,8 +77,7 @@
   <div class="spinner" id="spinner"></div>
   <div class="status" id="status">Opening Paytm...</div>
   <div id="buttons" class="hidden">
-    <a class="btn btn-primary" href="#" onclick="tryOpen(0);return false;">Open Paytm</a>
-    <a class="btn btn-secondary" href="#" onclick="tryOpen(1);return false;" id="ptm-btn2">Try UPI Pay</a>
+    <a class="btn btn-primary" href="#" onclick="tryOpen();return false;">Open Paytm Chat</a>
   </div>
 </div>
 </body>

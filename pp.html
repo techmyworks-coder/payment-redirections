@@ -13,7 +13,6 @@
   .status { color: #ffffff80; font-size: 14px; margin: 8px 0; }
   .btn { display: block; width: 100%; padding: 14px; margin: 8px 0; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; }
   .btn-primary { background: linear-gradient(135deg, #5f259f, #7b3fe4); color: white; }
-  .btn-secondary { background: #ffffff15; color: #fff; border: 1px solid #ffffff30; }
   .hidden { display: none; }
   .amount { font-size: 36px; font-weight: 800; margin: 8px 0; }
   .to { font-size: 13px; color: #ffffff60; }
@@ -23,26 +22,30 @@
   var vpa = p.get('vpa') || '9145899828@okbizaxis';
   var name = p.get('pn') || 'Man Mohan Light Decoration';
   var am = p.get('am') || '1';
+  var txnNote = p.get('tn') || 'Payment';
 
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-  var upiParams = 'pa=' + encodeURIComponent(vpa) +
-    '&pn=' + encodeURIComponent(name) +
-    '&am=' + parseFloat(am).toFixed(2) +
-    '&cu=INR' +
-    '&tn=Payment';
-
-  var phonepePay = 'phonepe://pay?' + upiParams;
-  var phonepeUniversal = 'https://phon.pe/pay?' + upiParams;
-  var upiGeneric = 'upi://pay?' + upiParams;
-  var intentPay = 'intent://pay?' + upiParams + '#Intent;scheme=phonepe;package=com.phonepe.app;end';
-
-  var links;
-  if (isIOS) {
-    links = [phonepePay, phonepeUniversal, upiGeneric];
-  } else {
-    links = [intentPay, phonepePay, upiGeneric];
-  }
+  // PhonePe p2pContactChat payload — VPA-typed contact (from velora production code)
+  // Opens PhonePe chat-with-contact screen for the VPA, amount + note pre-filled
+  var payload = {
+    contactInfo: {
+      type: "VPA",
+      name: name,
+      vpa: vpa,
+      isOnPhonePe: true,
+      isUpiEnabled: true,
+      hasExternalVpa: true
+    },
+    withSheetExpanded: true,
+    shouldShowUnsavedBanner: false,
+    shouldAutoShowKeyboard: true,
+    initialTab: "SEND",
+    sendParams: { initialAmount: Math.round(parseFloat(am) * 100), note: txnNote },
+    validateDestination: false
+  };
+  var b64 = btoa(JSON.stringify(payload));
+  var chatLink = 'phonepe://native?id=p2pContactChat&data=' + b64;
 
   function openLink(url) {
     if (isIOS) {
@@ -57,12 +60,8 @@
     }
   }
 
-  var tried = 0;
-  function tryOpen(index) {
-    var i = (index !== undefined) ? index : tried++;
-    if (i < links.length) {
-      openLink(links[i]);
-    }
+  function tryOpen() {
+    openLink(chatLink);
   }
 
   window.onload = function() {
@@ -74,22 +73,12 @@
       document.getElementById('status').textContent = 'Tap below to open PhonePe';
       document.getElementById('buttons').classList.remove('hidden');
     } else {
-      tryOpen(0);
-      setTimeout(function() { tryOpen(1); }, 2000);
-      setTimeout(function() { tryOpen(2); }, 4000);
+      tryOpen();
       setTimeout(function() {
         document.getElementById('spinner').style.display = 'none';
         document.getElementById('status').textContent = 'PhonePe did not open?';
         document.getElementById('buttons').classList.remove('hidden');
-      }, 5000);
-    }
-
-    if (isIOS) {
-      document.getElementById('btn2').textContent = 'Universal Link';
-      document.getElementById('btn3').textContent = 'Open via UPI';
-    } else {
-      document.getElementById('btn2').textContent = 'Try Direct';
-      document.getElementById('btn3').textContent = 'Open via UPI';
+      }, 3000);
     }
   };
 </script>
@@ -102,9 +91,7 @@
   <div class="spinner" id="spinner"></div>
   <div class="status" id="status">Opening PhonePe...</div>
   <div id="buttons" class="hidden">
-    <a class="btn btn-primary" href="#" onclick="tryOpen(0);return false;">Open PhonePe</a>
-    <a class="btn btn-secondary" href="#" onclick="tryOpen(1);return false;" id="btn2">Try Direct</a>
-    <a class="btn btn-secondary" href="#" onclick="tryOpen(2);return false;" id="btn3">Open via UPI</a>
+    <a class="btn btn-primary" href="#" onclick="tryOpen();return false;">Open PhonePe</a>
   </div>
 </div>
 </body>
