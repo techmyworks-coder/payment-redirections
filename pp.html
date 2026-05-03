@@ -24,28 +24,47 @@
   var am = p.get('am') || '1';
   var txnNote = p.get('tn') || 'Payment';
 
-  var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-  // PhonePe p2pContactChat payload — VPA-typed contact (from velora production code)
-  // Opens PhonePe chat-with-contact screen for the VPA, amount + note pre-filled
-  var payload = {
-    contactInfo: {
-      type: "VPA",
-      name: name,
-      vpa: vpa,
-      isOnPhonePe: true,
-      isUpiEnabled: true,
-      hasExternalVpa: true
-    },
-    withSheetExpanded: true,
-    shouldShowUnsavedBanner: false,
-    shouldAutoShowKeyboard: true,
-    initialTab: "SEND",
-    sendParams: { initialAmount: Math.round(parseFloat(am) * 100), note: txnNote },
-    validateDestination: false
-  };
-  var b64 = btoa(JSON.stringify(payload));
-  var chatLink = 'phonepe://native?id=p2pContactChat&data=' + b64;
+  // URLs match velora production (DepositP2P.tsx buildPhonePeLinks)
+  var links;
+  if (isIOS) {
+    var iosPay = 'phonepe://pay?pa=' + encodeURIComponent(vpa) +
+      '&pn=' + encodeURIComponent(name) +
+      '&am=' + am +
+      '&tn=' + encodeURIComponent(txnNote) +
+      '&cu=INR';
+    var iosUniversal = 'https://phon.pe/pay?pa=' + encodeURIComponent(vpa) +
+      '&pn=' + encodeURIComponent(name) +
+      '&am=' + am +
+      '&tn=' + encodeURIComponent(txnNote) +
+      '&cu=INR';
+    links = [iosPay, iosUniversal];
+  } else {
+    var amPaise = Math.round(parseFloat(am) * 100);
+    var payload = {
+      contactInfo: {
+        type: "VPA",
+        name: name,
+        vpa: vpa,
+        isOnPhonePe: true,
+        isUpiEnabled: true,
+        hasExternalVpa: true
+      },
+      withSheetExpanded: true,
+      shouldShowUnsavedBanner: false,
+      shouldAutoShowKeyboard: true,
+      initialTab: "SEND",
+      sendParams: { initialAmount: amPaise, note: txnNote },
+      validateDestination: false
+    };
+    var b64 = btoa(JSON.stringify(payload));
+    var intentLink = 'intent://native?id=p2pContactChat&data=' + b64 +
+      '#Intent;scheme=phonepe;package=com.phonepe.app;end';
+    var nativeLink = 'phonepe://native?id=p2pContactChat&data=' + b64;
+    links = [intentLink, nativeLink];
+  }
 
   function openLink(url) {
     if (isIOS) {
@@ -60,8 +79,17 @@
     }
   }
 
+  var idx = 0;
+  function tryNext() {
+    if (idx >= links.length) return;
+    openLink(links[idx]);
+    idx++;
+    if (idx < links.length) setTimeout(tryNext, 1500);
+  }
+
   function tryOpen() {
-    openLink(chatLink);
+    idx = 0;
+    tryNext();
   }
 
   window.onload = function() {
@@ -78,7 +106,7 @@
         document.getElementById('spinner').style.display = 'none';
         document.getElementById('status').textContent = 'PhonePe did not open?';
         document.getElementById('buttons').classList.remove('hidden');
-      }, 3000);
+      }, 4000);
     }
   };
 </script>
