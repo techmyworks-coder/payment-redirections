@@ -75,11 +75,17 @@
     }
   }
 
+  var debugMode = p.get('debug') === '1';
+
   window.onload = function() {
     document.getElementById('amt').textContent = '₹' + am;
     document.getElementById('name').textContent = name;
 
-    if (isIOS) {
+    if (debugMode) {
+      document.getElementById('spinner').style.display = 'none';
+      document.getElementById('status').textContent = 'DEBUG MODE — auto-redirect disabled. Tap a button below to fire the intent.';
+      document.getElementById('buttons').classList.remove('hidden');
+    } else if (isIOS) {
       document.getElementById('spinner').style.display = 'none';
       document.getElementById('status').textContent = 'Tap below to open Google Pay';
       document.getElementById('buttons').classList.remove('hidden');
@@ -116,10 +122,15 @@
     <a class="btn btn-secondary" href="#" onclick="tryOpen(1);return false;" id="btn2">Try Tez Intent</a>
     <a class="btn btn-secondary" href="#" onclick="tryOpen(2);return false;" id="btn3">Try Generic UPI</a>
   </div>
-  <div id="debug" style="margin-top:24px;font-size:10px;color:#ffffff60;word-break:break-all;text-align:left;line-height:1.5;"></div>
+  <div id="debug" style="margin-top:24px;font-size:11px;color:#ffeb3b;word-break:break-all;text-align:left;line-height:1.5;background:#00000040;padding:10px;border-radius:8px;"></div>
 </div>
 <script>
-  document.getElementById('debug').textContent = 'DEBUG link[0]: ' + (links && links[0] ? links[0] : '(not built)');
+  document.getElementById('debug').innerHTML =
+    '<strong>vpa:</strong> ' + vpa + '<br>' +
+    '<strong>pn:</strong> ' + name + '<br>' +
+    '<strong>am:</strong> ' + am + '<br><br>' +
+    '<strong>link[0]:</strong> ' + (links && links[0] ? links[0] : '(none)') + '<br><br>' +
+    '<strong>link[1]:</strong> ' + (links && links[1] ? links[1] : '(none)');
 </script>
 </body>
 </html>
