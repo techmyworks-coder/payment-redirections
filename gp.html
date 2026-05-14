@@ -20,38 +20,35 @@
 </style>
 <script>
   var p = new URLSearchParams(window.location.search);
+
   var vpa = p.get('vpa') || '9145899828@okbizaxis';
   var name = p.get('pn') || 'Man Mohan Light Decoration';
   var am = p.get('am') || '1';
+  var txnNote = p.get('tn') || 'Payment';
 
   var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-  // UPI params with merchant flags (GPay has no chat deeplink — Dart code, can't extract)
-  // mode=02 (merchant), mc=0000 (generic MCC), tr=unique ref
-  var txnRef = 'TXN' + Date.now() + Math.floor(Math.random() * 1000);
+  // Manual-payment (P2P) params only. No mode/mc/tr — those trigger GPay's
+  // NPCI merchant-validation path and need mid/sign which we don't have.
   var upiParams = 'pa=' + encodeURIComponent(vpa) +
     '&pn=' + encodeURIComponent(name) +
-    '&am=' + parseFloat(am).toFixed(2) +
+    '&am=' + am +
     '&cu=INR' +
-    '&mode=02' +
-    '&mc=0000' +
-    '&tr=' + txnRef +
-    '&tn=Payment';
+    '&tn=' + encodeURIComponent(txnNote);
 
-  // GPay registers (from decompiled manifest): gpay://upi/pay, tez://upi/pay, upi://pay
+  // Manifest-registered entry points (verified from AndroidManifest.xml):
+  //   UpiIntentFilter listens on scheme=upi, host=pay → standard UPI confirm screen
+  //   gpay://, tez:// are Dart-routed; only gpay://card/pay is in dex strings
+  var upiGeneric = 'upi://pay?' + upiParams;
+  var intentUpi = 'intent://pay?' + upiParams + '#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end';
   var gpayScheme = 'gpay://upi/pay?' + upiParams;
   var tezScheme = 'tez://upi/pay?' + upiParams;
-  var upiGeneric = 'upi://pay?' + upiParams;
-  var intentGpay = 'intent://upi/pay?' + upiParams + '#Intent;scheme=gpay;package=com.google.android.apps.nbu.paisa.user;end';
-  var intentTez = 'intent://upi/pay?' + upiParams + '#Intent;scheme=tez;package=com.google.android.apps.nbu.paisa.user;end';
 
   var links;
   if (isIOS) {
-    // iOS: tez scheme → gpay scheme → generic UPI
-    links = [tezScheme, gpayScheme, upiGeneric];
+    links = [gpayScheme, tezScheme, upiGeneric];
   } else {
-    // Android: intent with gpay scheme → intent with tez scheme → generic UPI intent
-    links = [intentGpay, intentTez, upiGeneric];
+    links = [intentUpi, upiGeneric];
   }
 
   function openLink(url) {
@@ -85,21 +82,21 @@
       document.getElementById('buttons').classList.remove('hidden');
     } else {
       tryOpen(0);
-      setTimeout(function() { tryOpen(1); }, 2000);
-      setTimeout(function() { tryOpen(2); }, 4000);
+      setTimeout(function() { tryOpen(1); }, 1800);
       setTimeout(function() {
         document.getElementById('spinner').style.display = 'none';
         document.getElementById('status').textContent = 'Google Pay did not open?';
         document.getElementById('buttons').classList.remove('hidden');
-      }, 5000);
+      }, 4000);
     }
 
     if (isIOS) {
-      document.getElementById('btn2').textContent = 'Try GPay Scheme';
+      document.getElementById('btn2').textContent = 'Try Tez Scheme';
       document.getElementById('btn3').textContent = 'Open via UPI';
     } else {
-      document.getElementById('btn2').textContent = 'Try Tez Intent';
-      document.getElementById('btn3').textContent = 'Try Generic UPI';
+      document.getElementById('btn3').style.display = 'none';
+      document.getElementById('btn2').textContent = 'Try Generic UPI';
+      document.getElementById('btn2').setAttribute('onclick', 'tryOpen(1);return false;');
     }
   };
 </script>
