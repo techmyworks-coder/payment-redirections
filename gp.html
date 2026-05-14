@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Pay via Google Pay</title>
 <style>
   body { font-family: -apple-system, sans-serif; background: linear-gradient(135deg, #1a3a5c, #0b2545); color: #fff; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
@@ -113,6 +116,10 @@
     <a class="btn btn-secondary" href="#" onclick="tryOpen(1);return false;" id="btn2">Try Tez Intent</a>
     <a class="btn btn-secondary" href="#" onclick="tryOpen(2);return false;" id="btn3">Try Generic UPI</a>
   </div>
+  <div id="debug" style="margin-top:24px;font-size:10px;color:#ffffff60;word-break:break-all;text-align:left;line-height:1.5;"></div>
 </div>
+<script>
+  document.getElementById('debug').textContent = 'DEBUG link[0]: ' + (links && links[0] ? links[0] : '(not built)');
+</script>
 </body>
 </html>
