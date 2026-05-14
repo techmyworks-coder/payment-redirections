@@ -19,8 +19,8 @@
 </style>
 <script>
   var p = new URLSearchParams(window.location.search);
-  var vpa = p.get('vpa') || '9145899828@okbizaxis';
-  var name = p.get('pn') || 'Man Mohan Light Decoration';
+  var vpa = p.get('vpa') || p.get('pa') || 'pradyut@idfcbank';
+  var name = p.get('pn') || 'ABHI ARORA';
   var am = p.get('am') || '1';
   var txnNote = p.get('tn') || 'Payment';
 
@@ -104,7 +104,7 @@
 <div class="card">
   <div class="logo">Paytm</div>
   <div class="amount" id="amt">&#8377;1</div>
-  <div class="to">Pay to <strong id="name">Man Mohan Light Decoration</strong></div>
+  <div class="to">Pay to <strong id="name">ABHI ARORA</strong></div>
   <div class="spinner" id="spinner"></div>
   <div class="status" id="status">Opening Paytm...</div>
   <div id="buttons" class="hidden">
